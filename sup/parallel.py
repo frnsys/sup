@@ -19,6 +19,8 @@ def apply_func(func, queue, args_chunk):
 
 def parallelize(func, args_set, cpus=0):
     """
+    Run a function in parallel, with a list of tuples as arguments to pass in each call.
+
     Example:
 
     func:
