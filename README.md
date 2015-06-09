@@ -6,6 +6,7 @@ So far, there are:
 
 - `sup.parallel` - for quickly parallelizing functions
 - `sup.progress` - a progress bar with estimated completion time
+- `sup.request`  - requests with retries
 
 ## Installation
 
