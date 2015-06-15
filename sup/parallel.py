@@ -61,10 +61,11 @@ def parallelize(func, args_set, cpus=0, timeout=10):
     # Print progress.
     p = Progress()
     comp = 0
-    p.print_progress(comp/len(args_set))
+    n_args = len(args_set)
+    p.print_progress(comp/n_args)
     while True:
         msg = queue.get(timeout=timeout)
-        p.print_progress(comp/len(args_set))
+        p.print_progress(comp/n_args)
         if msg is None:
             break
         comp += msg
