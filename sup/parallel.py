@@ -17,7 +17,7 @@ def apply_func(func, queue, args_chunk):
     return results
 
 
-def parallelize(func, args_set, cpus=0):
+def parallelize(func, args_set, cpus=0, timeout=10):
     """
     Run a function in parallel, with a list of tuples as arguments to pass in each call.
 
@@ -31,6 +31,8 @@ def parallelize(func, args_set, cpus=0):
     args_set:
 
         [(1,),(2,),(3,),(4,)]
+
+    Note: If this times out, it may be because you are out of memory.
     """
     if cpus < 1:
         cpus = mp.cpu_count() - 1
@@ -39,7 +41,6 @@ def parallelize(func, args_set, cpus=0):
 
     # Split args set into roughly equal-sized chunks, one for each core.
     args_chunks = np.array_split(args_set, cpus)
-    print(args_chunks)
 
     # Create a queue so we can log everything to a single file.
     manager = mp.Manager()
@@ -49,18 +50,27 @@ def parallelize(func, args_set, cpus=0):
     def done(results):
         queue.put(None)
 
-    results = pool.map_async(partial(apply_func, func, queue), args_chunks, callback=done)
+    def error(exception):
+        raise exception
+
+    results = pool.map_async(partial(apply_func, func, queue),
+                             args_chunks,
+                             callback=done,
+                             error_callback=error)
 
     # Print progress.
     p = Progress()
     comp = 0
     p.print_progress(comp/len(args_set))
     while True:
-        msg = queue.get()
+        msg = queue.get(timeout=timeout)
         p.print_progress(comp/len(args_set))
         if msg is None:
             break
         comp += msg
+
+    pool.close()
+    pool.join()
 
     # Flatten results.
     return [i for sub in results.get() for i in sub]

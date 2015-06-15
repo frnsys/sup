@@ -2,7 +2,7 @@ import logging
 from logging import handlers
 
 
-def spawn_log(name, log_path='log.log', email_config={}):
+def spawn_log(name, log_path='log.log', email_config={}, console=True):
     """
     Creates a logger.
 
@@ -26,14 +26,16 @@ def spawn_log(name, log_path='log.log', email_config={}):
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
     # Output to file
-    fh = logging.FileHandler(log_path)
-    fh.setFormatter(formatter)
-    logger.addHandler(fh)
+    if log_path is not None:
+        fh = logging.FileHandler(log_path)
+        fh.setFormatter(formatter)
+        logger.addHandler(fh)
 
     # Output to console.
-    ch = logging.StreamHandler()
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
+    if console:
+        ch = logging.StreamHandler()
+        ch.setFormatter(formatter)
+        logger.addHandler(ch)
 
     if email_config:
         # Output to email.
