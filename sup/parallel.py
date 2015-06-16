@@ -1,3 +1,4 @@
+import inspect
 import numpy as np
 import multiprocessing as mp
 from functools import partial
@@ -5,6 +6,13 @@ from sup.progress import Progress
 
 
 def apply_func(func, queue, args_chunk):
+    # `func` could be a class if you want to maintain
+    # some internal state per process.
+    # Whatever class you use, it must implement a `run` method.
+    if inspect.isclass(func):
+        obj = func()
+        func = obj.run
+
     # Apply each group of arguments in a list of arg groups to a func.
     results = []
     for args in args_chunk:
