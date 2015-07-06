@@ -2,7 +2,7 @@ import logging
 from logging import handlers
 
 
-def spawn_log(name, log_path='log.log', email_config={}, console=True):
+def spawn_log(name, log_path='log.log', email_config={}, console=True, rotating=False, rotating_config={}):
     """
     Creates a logger.
 
@@ -27,7 +27,16 @@ def spawn_log(name, log_path='log.log', email_config={}, console=True):
 
     # Output to file
     if log_path is not None:
-        fh = logging.FileHandler(log_path)
+        if rotating:
+            # Add a rotating log handler
+            rconfig = {
+                'maxBytes': 10000,
+                'backupCount': 5
+            }
+            rconfig.update(rotating_config)
+            fh = handlers.RotatingFileHandler(log_path, **rconfig)
+        else:
+            fh = logging.FileHandler(log_path)
         fh.setFormatter(formatter)
         logger.addHandler(fh)
 
@@ -36,6 +45,7 @@ def spawn_log(name, log_path='log.log', email_config={}, console=True):
         ch = logging.StreamHandler()
         ch.setFormatter(formatter)
         logger.addHandler(ch)
+
 
     if email_config:
         # Output to email.
