@@ -1,32 +1,29 @@
 import bz2
 import json
 import random
-from itertools import chain
+from itertools import islice, chain
 
 
-def sample_stream(stream, n):
+def sample_stream(stream, k):
     """
+    Reservoir sampling.
     Samples n random elements from an iterator or generator.
-    from: <http://stackoverflow.com/a/12583436>
+    Adapted from: <http://stackoverflow.com/a/12583436>
     """
-    results = []
-
     # Fill in the first n elements:
-    for _ in range(n):
-        results.append(stream.__next__())
+    sample = list(islice(stream, k))
+    n = k
 
-    # Randomize their positions
-    random.shuffle(results)
-    for i, v in enumerate(stream, n):
-        r = random.randint(0, i)
-
-        # At a decreasing rate, replace random items
-        if r < n:
-            results[r] = v
-
-    if len(results) < n:
+    if len(sample) < k:
         raise ValueError('Sample larger than population.')
-    return results
+
+    for item in stream:
+        n += 1
+        s = int(random.random() * n)
+        if s < k:
+            sample[s] = item
+
+    return sample
 
 
 def bz2_stream(file, encoding='utf-8'):
@@ -43,7 +40,7 @@ def bz2_stream(file, encoding='utf-8'):
                 yield d.decode(encoding)
 
 
-def json_stream(file, delimiter='\n', encoding='utf-8'):
+def json_stream(file, delimiter='\n', encoding='utf-8', progress=False):
     """
     Stream JSON objects from a file.
     Each object is demarcated by the specified delimiter (newline by default).
@@ -52,19 +49,25 @@ def json_stream(file, delimiter='\n', encoding='utf-8'):
     if file.endswith('.bz2'):
         stream = bz2_stream(file, encoding=encoding)
     else:
-        stream = open(file, 'r', encoding=encoding)
+        stream = open(file, 'r', encoding=encoding).readlines()
 
     # When streaming from a bz2 file,
     # we may get incomplete items from the stream.
     # So we keep the incomplete part and try to reassemble it with the next piece.
+    i = 1
     trailing = ''
     for d in stream:
         for r in d.split(delimiter):
             if trailing:
                 r = trailing + r
                 trailing = ''
+            if not r.strip():
+                continue
             try:
                 yield json.loads(r)
+                if progress and i % 10000 == 0:
+                    print(i)
+                i += 1
             except ValueError:
                 trailing = r
 
