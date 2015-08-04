@@ -1,6 +1,7 @@
 import inspect
 import numpy as np
 import multiprocessing as mp
+from itertools import islice
 from functools import partial
 from sup.progress import Progress
 
@@ -8,10 +9,9 @@ from sup.progress import Progress
 def apply_func(func, queue, args_chunk):
     # `func` could be a class if you want to maintain
     # some internal state per process.
-    # Whatever class you use, it must implement a `run` method.
+    # Whatever class you use, it must implement the `__call__` method.
     if inspect.isclass(func):
-        obj = func()
-        func = obj.run
+        func = func()
 
     # Apply each group of arguments in a list of arg groups to a func.
     results = []
@@ -83,3 +83,22 @@ def parallelize(func, args_set, cpus=0, timeout=10):
 
     # Flatten results.
     return [i for sub in results.get() for i in sub]
+
+
+def parallelize_stream(func, stream, cpus=0, timeout=10):
+    if cpus < 1:
+        cpus = mp.cpu_count() - 1
+    pool = mp.Pool(processes=cpus)
+    print('Running on {0} cores.'.format(cpus))
+
+    results = []
+    while True:
+        result = pool.map(func, islice(stream, cpus))
+        if result:
+            results += result
+        else:
+            break
+
+    pool.close()
+    pool.join()
+    return results
