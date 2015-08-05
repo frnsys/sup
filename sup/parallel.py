@@ -25,7 +25,7 @@ def apply_func(func, queue, args_chunk):
     return results
 
 
-def parallelize(func, args_set, cpus=0, timeout=10):
+def parallelize(func, args_set, cpus=-1, timeout=10):
     """
     Run a function in parallel, with a list of tuples as arguments to pass in each call.
 
@@ -43,7 +43,7 @@ def parallelize(func, args_set, cpus=0, timeout=10):
     Note: If this times out, it may be because you are out of memory.
     """
     if cpus < 1:
-        cpus = mp.cpu_count() - 1
+        cpus = mp.cpu_count() + cpus
     pool = mp.Pool(processes=cpus)
     print('Running on {0} cores.'.format(cpus))
 
@@ -85,19 +85,24 @@ def parallelize(func, args_set, cpus=0, timeout=10):
     return [i for sub in results.get() for i in sub]
 
 
-def parallelize_stream(func, stream, cpus=0, timeout=10):
+def parallelize_stream(func, stream, cpus=-1, timeout=10, expand_args=False):
+    """
+    If the `stream` iterator returns tuples which should be expanded as arguments
+    to `func`, specify `expand_args=True`.
+    """
     if cpus < 1:
-        cpus = mp.cpu_count() - 1
+        cpus = mp.cpu_count() + cpus
     pool = mp.Pool(processes=cpus)
     print('Running on {0} cores.'.format(cpus))
 
-    results = []
-    while True:
-        result = pool.map(func, islice(stream, cpus))
-        if result:
-            results += result
-        else:
-            break
+    if expand_args:
+        results = pool.starmap(func, stream)
+    else:
+        results = pool.map(func, stream)
+
+    # Alternatively...
+    #for result in pool.imap(func, stream):
+        #yield result
 
     pool.close()
     pool.join()
