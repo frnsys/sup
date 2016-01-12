@@ -2,7 +2,7 @@ import logging
 from logging import handlers
 
 
-def spawn_log(name, log_path='log.log', email_config={}, console=True, rotating=False, rotating_config={}):
+def logger(name, log_path=None, email_config={}, console=True, rotating=False, rotating_config={}):
     """
     Creates a logger.
 

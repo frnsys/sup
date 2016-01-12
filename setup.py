@@ -4,7 +4,7 @@ setup(
     name='sup',
     version='0.0.2',
     description='misc utils',
-    url='https://github.com/ftzeng/sup',
+    url='https://github.com/frnsys/sup',
     author='Francis Tseng (@frnsys)',
     license='MIT',
 
